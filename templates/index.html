@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mes Recettes</title>
+</head>
+<body>
+    <h1>Mes Recettes</h1>
+    <ul>
+        {% for plat in recettes %}
+            <li><a href="/recette?plat={{ plat }}">{{ plat }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

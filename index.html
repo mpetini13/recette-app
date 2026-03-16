@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liste de Courses</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 10px; }
+    h1 { text-align: center; }
+    input, button { margin: 5px 0; padding: 5px; width: 100%; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin: 5px 0; }
+    .checkbox { margin-right: 10px; }
+    .section { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Liste de Courses</h1>
+
+  <!-- Section pour ajouter des recettes -->
+  <div class="section">
+    <h2>Ajouter une recette</h2>
+    <input type="text" id="recipeName" placeholder="Nom du plat">
+    <input type="text" id="ingredients" placeholder="Ingrédients séparés par une virgule">
+    <button onclick="addRecipe()">Ajouter la recette</button>
+    <ul id="recipeList"></ul>
+  </div>
+
+  <!-- Section pour sélectionner les plats -->
+  <div class="section">
+    <h2>Plats de la semaine</h2>
+    <ul id="weeklyList"></ul>
+  </div>
+
+  <!-- Section inventaire maison -->
+  <div class="section">
+    <h2>Ce que j'ai déjà</h2>
+    <ul id="inventoryList"></ul>
+  </div>
+
+  <!-- Section liste de courses -->
+  <div class="section">
+    <h2>Liste finale des courses</h2>
+    <ul id="shoppingList"></ul>
+    <button onclick="generateShoppingList()">Générer la liste</button>
+  </div>
+
+<script>
+  let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
+  let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+
+  function saveData() {
+    localStorage.setItem('recipes', JSON.stringify(recipes));
+    localStorage.setItem('inventory', JSON.stringify(inventory));
+  }
+
+  function addRecipe() {
+    const name = document.getElementById('recipeName').value.trim();
+    const ingredients = document.getElementById('ingredients').value.split(',').map(i => i.trim()).filter(i => i);
+    if(name && ingredients.length > 0){
+      recipes.push({name, ingredients});
+      saveData();
+      document.getElementById('recipeName').value = '';
+      document.getElementById('ingredients').value = '';
+      renderRecipes();
+    }
+  }
+
+  function renderRecipes() {
+    const recipeList = document.getElementById('recipeList');
+    const weeklyList = document.getElementById('weeklyList');
+    const inventoryList = document.getElementById('inventoryList');
+    recipeList.innerHTML = '';
+    weeklyList.innerHTML = '';
+    inventoryList.innerHTML = '';
+
+    recipes.forEach((recipe, index) => {
+      // Liste recettes
+      const li = document.createElement('li');
+      li.textContent = recipe.name + ': ' + recipe.ingredients.join(', ');
+      recipeList.appendChild(li);
+
+      // Liste sélection hebdomadaire
+      const liWeek = document.createElement('li');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'checkbox';
+      checkbox.dataset.index = index;
+      liWeek.appendChild(checkbox);
+      liWeek.appendChild(document.createTextNode(recipe.name));
+      weeklyList.appendChild(liWeek);
+
+      // Inventaire maison
+      recipe.ingredients.forEach(ing => {
+        if(!inventory.includes(ing)){
+          inventory.push(ing);
+        }
+      });
+    });
+
+    inventory = Array.from(new Set(inventory));
+    saveData();
+    inventory.forEach(ing => {
+      const liInv = document.createElement('li');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = false;
+      checkbox.dataset.ing = ing;
+      liInv.appendChild(checkbox);
+      liInv.appendChild(document.createTextNode(ing));
+      inventoryList.appendChild(liInv);
+    });
+  }
+
+  function generateShoppingList() {
+    const shoppingList = document.getElementById('shoppingList');
+    shoppingList.innerHTML = '';
+    const selectedRecipes = Array.from(document.querySelectorAll('#weeklyList input[type="checkbox"]:checked'))
+      .map(cb => recipes[cb.dataset.index]);
+    let neededIngredients = [];
+    selectedRecipes.forEach(r => neededIngredients.push(...r.ingredients));
+    
+    // Retirer ce que l'on a déjà
+    const haveChecked = Array.from(document.querySelectorAll('#inventoryList input[type="checkbox"]:checked'))
+      .map(cb => cb.dataset.ing);
+    neededIngredients = neededIngredients.filter(i => !haveChecked.includes(i));
+    
+    neededIngredients = Array.from(new Set(neededIngredients));
+    neededIngredients.forEach(ing => {
+      const li = document.createElement('li');
+      li.textContent = ing;
+      shoppingList.appendChild(li);
+    });
+  }
+
+  renderRecipes();
+</script>
+</body>
+</html>
